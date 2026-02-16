@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impression Re-allocator | Professional Edition</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #3b82f6;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --bg: #f8fafc;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: #1e293b;
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.5;
+        }
+
+        .container { max-width: 1100px; margin: 0 auto; }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        h1 { font-size: 1.5rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        h3 { font-size: 1rem; color: #64748b; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 6px; }
+        
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { text-align: left; padding: 12px; font-size: 0.8rem; color: #64748b; border-bottom: 2px solid var(--border); }
+        td { padding: 10px; border-bottom: 1px solid var(--border); }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-secondary { background: #f1f5f9; color: #475569; }
+        .btn-save { background: #059669; color: white; }
+
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+        .badge-green { background: #dcfce7; color: #166534; }
+
+        #shareLinkSection {
+            background: #f0f9ff;
+            border: 1px dashed #7dd3fc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .expected-pacing-box {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .warning-text {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h1>📊 Impression Re-allocation</h1>
+        <button class="btn btn-save" onclick="generateShareLink()">🔗 Save Campaign Link</button>
+    </div>
+
+    <div id="shareLinkSection">
+        <label>Shareable Campaign Link (Saved with Current Values):</label>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="shareUrlInput" readonly>
+            <button class="btn btn-secondary" onclick="copyLink()">Copy</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Campaign Info</h3>
+        <div class="grid">
+            <div class="form-group">
+                <label>Campaign Name</label>
+                <input type="text" id="campaignName" placeholder="Quarterly Launch 2026">
+            </div>
+            <div class="form-group">
+                <label>Package Goal</label>
+                <input type="number" id="packageGoal" placeholder="1000000">
+            </div>
+            <div class="form-group">
+                <label>Start Date</label>
+                <input type="date" id="startDate">
+            </div>
+            <div class="form-group">
+                <label>End Date</label>
+                <input type="date" id="endDate">
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Line Items</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Line Name</th>
+                    <th>Current Goal</th>
+                    <th>Delivered</th>
+                    <th>Current Pacing (%)</th>
+                    <th style="width: 50px;"></th>
+                </tr>
+            </thead>
+            <tbody id="lineItems"></tbody>
+        </table>
+        <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary" onclick="addLine()">+ Add Line</button>
+                <button class="btn btn-primary" onclick="calculate()">Calculate Re-allocation</button>
+            </div>
+            <div style="font-size: 0.85rem; color: #64748b;">
+                Thresholds: Under <b>< 90%</b> | Over <b>> 105%</b>
+            </div>
+        </div>
+    </div>
+
+    <div id="outputSection" style="display: none;">
+        <div class="card" style="border-top: 4px solid var(--accent);">
+            <h3>New Configuration (Target Health: 105-110%)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Line</th>
+                        <th>Status</th>
+                        <th>Old Goal</th>
+                        <th>Adjustment</th>
+                        <th>New Goal</th>
+                        <th>Expected Pacing</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsTable"></tbody>
+            </table>
+            <div id="capacityWarning" class="warning-text">
+                ⚠️ Some impressions were not reallocated to prevent healthy lines from dropping below 105% pacing.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function generateShareLink() {
+        const data = {
+            name: document.getElementById('campaignName').value,
+            goal: document.getElementById('packageGoal').value,
+            start: document.getElementById('startDate').value,
+            end: document.getElementById('endDate').value,
+            lines: []
+        };
+        document.querySelectorAll('#lineItems tr').forEach(row => {
+            data.lines.push({
+                n: row.querySelector('.ln').value,
+                g: row.querySelector('.lg').value,
+                d: row.querySelector('.ld').value,
+                p: row.querySelector('.lp').value
+            });
+        });
+        const encoded = btoa(JSON.stringify(data));
+        const url = window.location.origin + window.location.pathname + '?data=' + encoded;
+        document.getElementById('shareUrlInput').value = url;
+        document.getElementById('shareLinkSection').style.display = 'block';
+        window.history.pushState({}, '', url);
+    }
+
+    function loadFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const dataStr = params.get('data');
+        if (!dataStr) { addLine(); return; }
+        try {
+            const data = JSON.parse(atob(dataStr));
+            document.getElementById('campaignName').value = data.name || '';
+            document.getElementById('packageGoal').value = data.goal || '';
+            document.getElementById('startDate').value = data.start || '';
+            document.getElementById('endDate').value = data.end || '';
+            document.getElementById('lineItems').innerHTML = '';
+            data.lines.forEach(l => addLine(l.n, l.g, l.d, l.p));
+            calculate();
+        } catch (e) { addLine(); }
+    }
+
+    function addLine(n='', g='', d='', p='') {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text" class="ln" value="${n}" placeholder="e.g. Mobile Web"></td>
+            <td><input type="number" class="lg" value="${g}" placeholder="0"></td>
+            <td><input type="number" class="ld" value="${d}" placeholder="0"></td>
+            <td><input type="number" class="lp" value="${p}" placeholder="100"></td>
+            <td><button class="btn" style="color:var(--danger)" onclick="this.parentElement.parentElement.remove()">✕</button></td>
+        `;
+        document.getElementById('lineItems').appendChild(tr);
+    }
+
+    function calculate() {
+        const lines = [];
+        let totalSurplus = 0;
+        
+        document.querySelectorAll('#lineItems tr').forEach(row => {
+            const g = parseFloat(row.querySelector('.lg').value) || 0;
+            const d = parseFloat(row.querySelector('.ld').value) || 0;
+            const p = parseFloat(row.querySelector('.lp').value) || 0;
+            const name = row.querySelector('.ln').value || 'Line';
+            lines.push({ name, oldGoal: g, delivered: d, pacing: p, adjustment: 0 });
+        });
+
+        // 1. Cut Under-pacers (< 90%) to reach 105% pacing
+        lines.forEach(l => {
+            if (l.pacing < 90) {
+                // To make Delivered / Target = 1.05, Target = Delivered / 1.05
+                // New Goal = (Delivered / (Pacing/100)) * (Target Health / 100) -- No, simpler:
+                // New Goal = (Current Pacing * Old Goal) / 105
+                const targetGoal = Math.floor((l.pacing * l.oldGoal) / 105);
+                const surplus = l.oldGoal - targetGoal;
+                if (surplus > 0) {
+                    l.adjustment = -surplus;
+                    totalSurplus += surplus;
+                }
+            }
+        });
+
+        // 2. Safety distribution to Over-pacers (> 105%)
+        // Ensure they don't drop below 105%
+        const overPacers = lines.filter(l => l.pacing > 105);
+        let remainingToDistribute = totalSurplus;
+
+        if (overPacers.length > 0 && totalSurplus > 0) {
+            // Calculate max capacity for each overpacer before they hit 105%
+            overPacers.forEach(l => {
+                const maxNewGoal = Math.floor((l.pacing * l.oldGoal) / 105);
+                l.capacity = maxNewGoal - l.oldGoal;
+            });
+
+            const totalCapacity = overPacers.reduce((sum, l) => sum + l.capacity, 0);
+            
+            overPacers.forEach(l => {
+                const ratio = l.capacity / totalCapacity;
+                const share = Math.min(l.capacity, Math.floor(remainingToDistribute * ratio));
+                l.adjustment = share;
+                remainingToDistribute -= share;
+            });
+        }
+
+        document.getElementById('capacityWarning').style.display = remainingToDistribute > 10 ? 'block' : 'none';
+        renderResults(lines);
+    }
+
+    function renderResults(lines) {
+        const tbody = document.getElementById('resultsTable');
+        tbody.innerHTML = '';
+        document.getElementById('outputSection').style.display = 'block';
+
+        lines.forEach(l => {
+            const newGoal = l.oldGoal + l.adjustment;
+            // Exact Expected Pacing = (Original Pacing * Old Goal) / New Goal
+            const expectedPacing = newGoal > 0 ? ((l.pacing * l.oldGoal) / newGoal).toFixed(2) : 0;
+
+            let status = '<span class="badge">Neutral</span>';
+            if (l.pacing < 90) status = '<span class="badge badge-red">Reduced</span>';
+            if (l.pacing > 105) status = '<span class="badge badge-green">Increased</span>';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${l.name}</td>
+                <td>${status}</td>
+                <td>${l.oldGoal.toLocaleString()}</td>
+                <td style="color:${l.adjustment >= 0 ? 'green' : 'red'}; font-weight:bold">
+                    ${l.adjustment > 0 ? '+' : ''}${l.adjustment.toLocaleString()}
+                </td>
+                <td>${newGoal.toLocaleString()}</td>
+                <td class="expected-pacing-box">${expectedPacing}%</td>
+            `;
+            tbody.appendChild(tr);
+        });
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    function copyLink() {
+        const copyText = document.getElementById("shareUrlInput");
+        copyText.select();
+        document.execCommand("copy");
+        alert("Campaign link copied to clipboard!");
+    }
+
+    window.onload = loadFromUrl;
+</script>
+</body>
+</html>
