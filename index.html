@@ -155,7 +155,7 @@
                 <button class="btn btn-primary" onclick="calculate()">Calculate Re-allocation</button>
             </div>
             <div style="font-size: 0.85rem; color: #64748b;">
-                Thresholds: Under <b>< 90%</b> | Over <b>> 105%</b>
+                Thresholds: Under <b>< 95%</b> | Over <b>> 105%</b>
             </div>
         </div>
     </div>
@@ -247,9 +247,9 @@
             lines.push({ name, oldGoal: g, delivered: d, pacing: p, adjustment: 0 });
         });
 
-        // 1. Cut Under-pacers (< 90%) to reach 105% pacing
+        // 1. Cut Under-pacers (< 95%) to reach 105% pacing
         lines.forEach(l => {
-            if (l.pacing < 90) {
+            if (l.pacing < 95) {
                 // To make Delivered / Target = 1.05, Target = Delivered / 1.05
                 // New Goal = (Delivered / (Pacing/100)) * (Target Health / 100) -- No, simpler:
                 // New Goal = (Current Pacing * Old Goal) / 105
@@ -299,7 +299,7 @@
             const expectedPacing = newGoal > 0 ? ((l.pacing * l.oldGoal) / newGoal).toFixed(2) : 0;
 
             let status = '<span class="badge">Neutral</span>';
-            if (l.pacing < 90) status = '<span class="badge badge-red">Reduced</span>';
+            if (l.pacing < 95) status = '<span class="badge badge-red">Reduced</span>';
             if (l.pacing > 105) status = '<span class="badge badge-green">Increased</span>';
 
             const tr = document.createElement('tr');
@@ -328,4 +328,5 @@
     window.onload = loadFromUrl;
 </script>
 </body>
+
 </html>
