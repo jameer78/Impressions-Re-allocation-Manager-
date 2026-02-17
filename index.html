@@ -122,7 +122,8 @@
             </div>
             <div class="form-group">
                 <label>Package Goal</label>
-                <input type="number" id="packageGoal" placeholder="1000000">
+                <input type="text" id="packageGoal" placeholder="1,000,000" 
+                    oninput="formatNumberWithCommas(this)">
             </div>
             <div class="form-group">
                 <label>Start Date</label>
@@ -184,6 +185,11 @@
 </div>
 
 <script>
+    function formatNumberWithCommas(input) {
+    let value = input.value.replace(/,/g, '');
+    if (value === '' || isNaN(value)) return;
+    input.value = Number(value).toLocaleString('en-US');
+    }
     function generateShareLink() {
         const data = {
             name: document.getElementById('campaignName').value,
@@ -227,8 +233,10 @@
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><input type="text" class="ln" value="${n}" placeholder="e.g. Mobile Web"></td>
-            <td><input type="number" class="lg" value="${g}" placeholder="0"></td>
-            <td><input type="number" class="ld" value="${d}" placeholder="0"></td>
+            <td><input type="text" class="lg" value="${g}" placeholder="0"
+            oninput="formatNumberWithCommas(this)"></td>
+            <td><input type="text" class="ld" value="${d}" placeholder="0"
+            oninput="formatNumberWithCommas(this)"></td>
             <td><input type="number" class="lp" value="${p}" placeholder="100"></td>
             <td><button class="btn" style="color:var(--danger)" onclick="this.parentElement.parentElement.remove()">✕</button></td>
         `;
@@ -238,10 +246,13 @@
     function calculate() {
         const lines = [];
         let totalSurplus = 0;
+        const packageGoal = parseFloat(
+        document.getElementById('packageGoal').value.replace(/,/g, '')
+        ) || 0;
         
         document.querySelectorAll('#lineItems tr').forEach(row => {
-            const g = parseFloat(row.querySelector('.lg').value) || 0;
-            const d = parseFloat(row.querySelector('.ld').value) || 0;
+            const g = parseFloat(row.querySelector('.lg').value.replace(/,/g, '')) || 0;
+            const d = parseFloat(row.querySelector('.ld').value.replace(/,/g, '')) || 0;
             const p = parseFloat(row.querySelector('.lp').value) || 0;
             const name = row.querySelector('.ln').value || 'Line';
             lines.push({ name, oldGoal: g, delivered: d, pacing: p, adjustment: 0 });
@@ -330,3 +341,4 @@
 </body>
 
 </html>
+
